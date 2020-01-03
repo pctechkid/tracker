@@ -1,0 +1,68 @@
+#!/bin/bash
+downloadpath='/home/she/aria2/download/'
+name='gdrive'
+folder=''
+retry_num=3
+
+
+filepath=$3
+rdp=${filepath#${downloadpath}/}
+path=${downloadpath}/${rdp%%/*}
+
+Task_INFO(){
+    echo
+    echo -e "[\033[1;32mUPLOAD\033[0m] Task information:"
+    echo -e "-------------------------- [\033[1;33mINFO\033[0m] --------------------------"
+    echo -e "\033[1;35mDownload path：\033[0m${downloadpath}"
+    echo -e "\033[1;35mFile path: \033[0m${filepath}"
+    echo -e "\033[1;35mUpload path: \033[0m${uploadpath}"
+    echo -e "\033[1;35mRemote path：\033[0m${remotepath}"
+    echo -e "-------------------------- [\033[1;33mINFO\033[0m] --------------------------"
+    echo
+}
+
+Upload(){
+    retry=0
+    while [ $retry -le $retry_num -a -e "${uploadpath}" ]; do
+        [ $retry != 0 ] && echo && echo -e "Upload failed! Retry ${retry}/${retry_num} ..." && echo
+        rclone move -v "${uploadpath}" "${remotepath}"
+        rclone rmdirs -v "${downloadpath}" --leave-root
+        retry=$(($retry+1))
+    done
+    [ -e "${uploadpath}" ] && echo && echo -e "Upload failed: ${uploadpath}" && echo
+    [ -e "${path}".aria2 ] && rm -vf "${path}".aria2
+    [ -e "${filepath}".aria2 ] && rm -vf "${filepath}".aria2
+}
+
+if [ $2 -eq 0 ]
+    then
+        exit 0
+fi
+
+echo && echo -e "      \033[1;33mU P L O A D ! ! !\033[0m" && echo
+echo && echo -e "      \033[1;32mU P L O A D ! ! !\033[0m" && echo
+echo && echo -e "      \033[1;35mU P L O A D ! ! !\033[0m" && echo
+
+if [ "$path" = "$filepath" ] && [ $2 -eq 1 ]
+    then
+        uploadpath=${filepath}
+        remotepath="${name}:${folder}"
+        Task_INFO
+        Upload
+        exit 0
+elif [ "$path" != "$filepath" ] && [ $2 -gt 1 ]
+    then
+        uploadpath=${path}
+        remotepath="${name}:${folder}/${rdp%%/*}"
+        Task_INFO
+        Upload
+        exit 0
+elif [ "$path" != "$filepath" ] && [ $2 -eq 1 ]
+    then
+        uploadpath=${filepath}
+        remotepath="${name}:${folder}/${rdp%/*}"
+        Task_INFO
+        Upload
+        exit 0
+fi
+Task_INFO
